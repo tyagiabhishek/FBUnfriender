@@ -4,7 +4,7 @@ from selenium.common.exceptions import NoSuchElementException
 SCROLL_PAUSE_TIME = 5
 
 exec_path = input("Enter path for geckodriver executable: ")
-driver = webdriver.Firefox(executable_path='D:\\geckodriver-v0.24.0-win64\\geckodriver.exe')
+driver = webdriver.Firefox(executable_path=exec_path)
 driver.get('https://www.facebook.com/')
 
 username_box = driver.find_element_by_id('email') 
