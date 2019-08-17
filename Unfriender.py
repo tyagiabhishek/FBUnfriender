@@ -8,9 +8,8 @@ from selenium.common.exceptions import NoSuchElementException
 SCROLL_PAUSE_TIME = 5
 
 exec_path = input("Enter executable path for geckodriver: ")
-driver = webdriver.Firefox(
-    executable_path="D:\\geckodriver-v0.24.0-win64\\geckodriver.exe"
-)
+driver = webdriver.Firefox(executable_path=exec_path  #"D:\\geckodriver-v0.24.0-win64\\geckodriver.exe"
+                           )
 driver.get("https://www.facebook.com/")
 
 username_box = driver.find_element_by_id("email")
@@ -46,6 +45,8 @@ except NoSuchElementException:
     print("Successfully logged in")
 
 real_friends = []
+
+#add same location at which you save your pickle below
 try:
     pickle_in = open("real_friends.pickle", "rb")
     real_friends = pickle.load(pickle_in)
@@ -107,29 +108,53 @@ if len(real_friends) == 0:
         if friend.find("friends_tab") != -1:
             real_friends.append(friend)
 
+    #Add a certain pickle location
+
     pickle_out = open("real_friends.pickle", "wb")
     pickle.dump(real_friends, pickle_out)
 
+flag = 0
+count = 0
+
+#pickle to continue from where you left off last time
+
+last_unfriended = ''
+try:
+    pickle_in = open("D:\\WORK\\last_unfriended.pickle", "rb")
+    last_unfriended = pickle.load(pickle_in)
+except IOError:
+    print("Pickle for last unfriended not present")
 for friend in real_friends:
+    if (last_unfriended == '' or friend.find(last_unfriended) != -1):
+        flag = 1
+    if flag == 0:
+        continue
+    if count > 100:
+        break
     driver.get(friend)
     try:
         elem = driver.find_element_by_partial_link_text("India")
     except NoSuchElementException:
         # Code for unfriending
         print("Being Unfriended:  " + friend)
-        div = driver.find_elements_by_css_selector(
-            "div[class='_2yfv _2yfv FriendButton']"
-        )
+        sleep(1)
+        div = driver.find_elements_by_css_selector("div[class='_2yfv _2yfv FriendButton']")
         try:
-            links = div[0].find_elements_by_tag_name("a")
+            links = div[0].find_elements_by_tag_name('a')
             button = links[0]
             button.click()
-            sleep(2)
-            Unfriend_button = driver.find_element_by_link_text("Unfriend")
+            sleep(3)
+            Unfriend_button = driver.find_element_by_link_text('Unfriend')
             Unfriend_button.click()
+            count = count + 1
+            last_undriended = friend
         except IndexError:
-            print(" Could'nt Unfriend: " + friend)
-
+            print("[INDEX ERROR] Could'nt Unfriend: "+friend)
+        except NoSuchElementException:
+            print("[UNFRIEND BUTTON NOT FOUND] Could'nt unfriend: "+friend)
+        except Exception:
+            print("Could'nt Unfriend: "+friend)
+    print(count)
     sleep(2)
 
 driver.quit()
