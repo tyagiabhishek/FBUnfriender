@@ -1,15 +1,26 @@
 import getpass
 import pickle
 from time import sleep
-
+from datetime import datetime
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 
 SCROLL_PAUSE_TIME = 5
 
 exec_path = input("Enter executable path for geckodriver: ")
-driver = webdriver.Firefox(executable_path=exec_path  #"D:\\geckodriver-v0.24.0-win64\\geckodriver.exe"
-                           )
+
+firefox_profile = webdriver.FirefoxProfile()
+# Disable CSS
+firefox_profile.set_preference('permissions.default.stylesheet', 2)
+# Disable images
+firefox_profile.set_preference('permissions.default.image', 2)
+# Disable Flash
+firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+
+driver = webdriver.Firefox(
+    firefox_profile=firefox_profile,
+    executable_path=exec_path  #"D:\\geckodriver-v0.24.0-win64\\geckodriver.exe"
+)
 driver.get("https://www.facebook.com/")
 
 username_box = driver.find_element_by_id("email")
@@ -115,7 +126,8 @@ if len(real_friends) == 0:
 
 flag = 0
 count = 0
-
+ind = 0
+trial = 0
 #pickle to continue from where you left off last time
 
 last_unfriended = ''
@@ -125,6 +137,7 @@ try:
 except IOError:
     print("Pickle for last unfriended not present")
 for friend in real_friends:
+    ind = ind + 1
     if (last_unfriended == '' or friend.find(last_unfriended) != -1):
         flag = 1
     if flag == 0:
@@ -132,6 +145,8 @@ for friend in real_friends:
     if count > 100:
         break
     driver.get(friend)
+    print("Trying Friend number: " + str(ind) + " out of " + str(len(real_friends)))
+    trial = trial + 1
     try:
         elem = driver.find_element_by_partial_link_text("India")
     except NoSuchElementException:
@@ -149,12 +164,25 @@ for friend in real_friends:
             count = count + 1
             last_undriended = friend
         except IndexError:
-            print("[INDEX ERROR] Could'nt Unfriend: "+friend)
+            print("[INDEX ERROR] Could'nt Unfriend: " + friend)
         except NoSuchElementException:
-            print("[UNFRIEND BUTTON NOT FOUND] Could'nt unfriend: "+friend)
+            print("[UNFRIEND BUTTON NOT FOUND] Could'nt unfriend: " + friend)
         except Exception:
-            print("Could'nt Unfriend: "+friend)
-    print(count)
-    sleep(2)
+            print("Could'nt Unfriend: " + friend)
+    print("Unfriended count: " + str(count) + " out of tried: " + str(trial))
+
+    #adding 90 mins of pause to prevent getting blocked xD
+
+    if count > 85 or trial > 130:
+        pickle_out = open("last_unfriended.pickle", "wb")
+        pickle.dump(last_undriended, pickle_out)
+        for i in range(90):
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            print(current_time)
+            driver.get('https://www.facebook.com/')
+            sleep(60)
+        count = 0
+        trial = 0
 
 driver.quit()
